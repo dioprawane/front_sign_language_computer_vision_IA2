@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Langue des Signes - Conversion</title>
+
+  <!-- Bootstrap CSS -->
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  >
+  
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Fichier CSS personnalisé -->
+  <link rel="stylesheet" href="styles/style.css">
+
+  <!-- Scripts nécessaires pour Bootstrap -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"
+  ></script>
+  <script
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+  ></script>
+</head>
+
+<body>
+  <!-- 
+    Remplacez BACKEND_URL juste en dessous par 
+    l'URL de votre backend Flask (https://votre-backend.onrender.com, etc.) 
+  -->
+  <script>
+    const BACKEND_URL = "http://127.0.0.1:5000";
+    //const BACKEND_URL = "https://sign-language-computer-vision-ia2.onrender.com";
+  </script>
+
+  <div class="container text-center">
+    <!-- Titre principal -->
+    <h1>Conversion de la Langue des Signes</h1>
+
+    <div class="row mt-4">
+      <!-- Colonne de gauche : Flux Vidéo -->
+      <div class="col-md-6">
+        <h4>Flux Vidéo en Temps Réel</h4>
+        <div class="video-feed">
+          <!-- Webcam (WebRTC) -->
+          <video id="video" width="100%" autoplay playsinline muted></video>
+          <!-- Image annotée -->
+          <img id="annotated_img" width="100%" style="margin-top: 10px;" />
+        </div>
+        <!-- Bouton Guide -->
+        <div class="guide">
+          <button
+            class="btn btn-secondary btn-custom"
+            data-toggle="modal"
+            data-target="#usageGuide"
+          >
+            Guide d'utilisation
+          </button>
+        </div>
+      </div>
+
+      <!-- Colonne de droite : Texte détecté + Boutons -->
+      <div class="col-md-6">
+        <div class="text-section">
+          <h4>Texte Détecté</h4>
+          <p class="status-text">
+            <strong>Caractère détecté :</strong>
+            <span id="current_alphabet">N/A</span>
+          </p>
+          <p class="status-text">
+            <strong>Mot courant :</strong>
+            <span id="word_buffer">N/A</span>
+          </p>
+          <p class="status-text">
+            <strong>Phrase en cours :</strong>
+            <span id="sentence">N/A</span>
+          </p>
+        </div>
+
+        <!-- Boutons d’action -->
+        <div class="mt-4">
+          <button
+            id="pauseButton"
+            class="btn btn-info btn-custom"
+            onclick="togglePause()"
+          >
+            Pause
+          </button>
+          <button
+            class="btn btn-danger btn-custom"
+            onclick="quitAndShow()"
+          >
+            Arrêter
+          </button>
+          <button
+            class="btn btn-success btn-custom"
+            onclick="speak()"
+          >
+            Parler
+          </button>
+          <button
+            class="btn btn-warning btn-custom"
+            onclick="reset()"
+          >
+            Réinitialiser
+          </button>
+          <button
+            class="btn btn-warning btn-custom"
+            onclick="removeLast()"
+          >
+            Supprimer Dernier
+          </button>
+          <button
+            class="btn btn-info btn-custom"
+            onclick="addSpace()"
+          >
+            Ajouter Espace
+          </button>
+          <button
+            class="btn btn-primary btn-custom"
+            onclick="addPoint()"
+          >
+            Ajouter Point
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal : Guide d’utilisation -->
+    <div
+      class="modal fade"
+      id="usageGuide"
+      tabindex="-1"
+      aria-labelledby="usageGuideLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="usageGuideLabel">Guide d'utilisation</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+              style="color: white;"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Bienvenue dans l'application de conversion de la langue des signes.
+              Voici comment l'utiliser :
+            </p>
+            <ul>
+              <li>
+                <strong>Flux Vidéo :</strong>
+                La caméra détecte vos gestes et les convertit en texte.
+              </li>
+              <li>
+                <strong>Texte Détecté :</strong>
+                Affiche le caractère, le mot courant et la phrase construite.
+              </li>
+              <li>
+                <strong>Fonctionnement :</strong>
+                Faites un geste parmi ceux reconnus par le modèle.
+                Le geste est détecté et attend 3 secondes avant de détecter le suivant.
+                Les caractères s'accumulent dans le <em>Mot courant</em>,
+                et en ajoutant un espace, ce mot passe dans la
+                <em>Phrase en cours</em>.
+              </li>
+              <li>
+                <strong>Actions :</strong>
+                <ul>
+                  <li><button class="btn btn-info btn-sm" disabled>Pause</button> : Met en pause la détection.</li>
+                  <li><button class="btn btn-danger btn-sm" disabled>Arrêter</button> : Affiche la phrase finale et réinitialise.</li>
+                  <li><button class="btn btn-success btn-sm" disabled>Parler</button> : Lit la phrase détectée.</li>
+                  <li><button class="btn btn-warning btn-sm" disabled>Réinitialiser</button> : Réinitialise les données.</li>
+                  <li><button class="btn btn-info btn-sm" disabled>Ajouter Espace</button> : Ajoute un espace à la phrase.</li>
+                  <li><button class="btn btn-primary btn-sm" disabled>Ajouter Point</button> : Ajoute un point final.</li>
+                  <li><button class="btn btn-warning btn-sm" disabled>Supprimer Dernier</button> : Supprime le dernier caractère.</li>
+                </ul>
+              </li>
+            </ul>
+            <p>
+              <strong>Raccourcis Clavier :</strong>
+            </p>
+            <ul>
+              <li><kbd>R</kbd> : Réinitialiser</li>
+              <li><kbd>Q</kbd> : Quitter</li>
+              <li><kbd>P</kbd> : Parler</li>
+              <li><kbd>S</kbd> : Supprimer le dernier caractère</li>
+              <li><kbd>Espace</kbd> : Ajouter un espace</li>
+              <li><kbd>.</kbd> : Ajouter un point</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div><!-- Fin Modal -->
+
+  </div><!-- Fin .container -->
+
+  <!-- Notre script JS externe -->
+  <script src="scripts/app.js"></script>
+
+</body>
+</html>

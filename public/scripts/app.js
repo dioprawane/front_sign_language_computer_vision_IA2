@@ -1,71 +1,120 @@
-document.addEventListener("DOMContentLoaded", () => {
-  // Sélectionner les éléments HTML
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const statusText = document.getElementById('status-text');
+// Récupération des éléments HTML
+const videoElement = document.getElementById('video');
+const canvas = document.createElement('canvas');
+canvas.width = 640;
+canvas.height = 480;
+const context = canvas.getContext('2d');
 
-  if (!video || !canvas || !statusText) {
-    console.error("Un ou plusieurs éléments HTML nécessaires sont introuvables.");
-    return;
+// Démarrage de la webcam + envoi périodique au backend
+async function startVideo() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    videoElement.srcObject = stream;
+
+    // Envoie un frame toutes les 600 ms
+    setInterval(() => {
+      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const frameData = canvas.toDataURL('image/jpeg');
+
+      fetch(BACKEND_URL + '/webrtc_feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ frame: frameData })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // "data.annotated_frame" = "data:image/jpeg;base64,..."
+        document.getElementById('annotated_img').src = data.annotated_frame;
+      })
+      .catch(err => console.error('Erreur lors de l’envoi du flux WebRTC:', err));
+
+    }, 3000);
+
+  } catch (err) {
+    console.error('Erreur lors de l’accès à la caméra :', err);
   }
+}
+startVideo();
 
-  // Configurer le backend URL
-  const backendUrl = 'https://sign-language-computer-vision-ia2.onrender.com/process_frame'; // Remplacez par l'URL du backend déployé
+// Mise à jour de l’état (caractère, mot, phrase) toutes les 600 ms
+function updateStatus() {
+  fetch(BACKEND_URL + '/get_status')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('current_alphabet').textContent = data.current_alphabet || 'N/A';
+      document.getElementById('word_buffer').textContent = data.word_buffer || 'N/A';
+      document.getElementById('sentence').textContent = data.sentence || 'N/A';
+    })
+    .catch(error => console.error('Erreur lors de la mise à jour des données:', error));
+}
+setInterval(updateStatus, 3000);
 
-  // Initialiser le flux vidéo
-  async function startVideo() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
-      video.srcObject = stream;
-      video.play();
-      statusText.innerText = "Flux vidéo activé";
-      processFrames();
-    } catch (error) {
-      console.error('Erreur lors de l’accès à la caméra :', error);
-      statusText.innerText = "Erreur caméra";
-    }
+// Fonctions pour les boutons
+function togglePause() {
+  fetch(BACKEND_URL + '/toggle_pause', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+      const btn = document.getElementById('pauseButton');
+      btn.textContent = data.status === 'paused' ? 'Reprendre' : 'Pause';
+    })
+    .catch(error => console.error('Erreur togglePause:', error));
+}
+
+function reset() {
+  fetch(BACKEND_URL + '/reset', { method: 'POST' })
+    .catch(error => console.error('Erreur reset:', error));
+}
+
+function quitAndShow() {
+  fetch(BACKEND_URL + '/quit_and_show', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+      alert('Phrase finale : ' + data.final_sentence);
+    })
+    .catch(error => console.error('Erreur quitAndShow:', error));
+}
+
+function speak() {
+  fetch(BACKEND_URL + '/speak', { method: 'POST' })
+    .catch(error => console.error('Erreur speak:', error));
+}
+
+function removeLast() {
+  fetch(BACKEND_URL + '/remove_last', { method: 'POST' })
+    .catch(error => console.error('Erreur removeLast:', error));
+}
+
+function addSpace() {
+  fetch(BACKEND_URL + '/add_space', { method: 'POST' })
+    .catch(error => console.error('Erreur addSpace:', error));
+}
+
+function addPoint() {
+  fetch(BACKEND_URL + '/add_point', { method: 'POST' })
+    .catch(error => console.error('Erreur addPoint:', error));
+}
+
+// Raccourcis clavier
+document.addEventListener('keydown', function (event) {
+  switch (event.key) {
+    case ' ':
+      event.preventDefault(); // Empêche le défilement
+      addSpace();
+      break;
+    case 'r':
+      reset();
+      break;
+    case 'q':
+      quitAndShow();
+      break;
+    case 'p':
+      speak();
+      break;
+    case 's':
+      removeLast();
+      break;
+    case '.':
+      addPoint();
+      break;
   }
-
-  // Capturer les frames et les envoyer au backend
-  function processFrames() {
-    const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    async function sendFrame() {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL('image/jpeg');
-
-      try {
-        const response = await fetch(backendUrl, {
-          method: 'POST',
-          body: JSON.stringify({ image: imageData }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          statusText.innerText = `Détection : ${data.result}`;
-        } else {
-          console.error('Erreur de réponse du backend');
-          statusText.innerText = "Erreur de détection";
-        }
-      } catch (error) {
-        console.error('Erreur lors de l’envoi de la frame :', error);
-        statusText.innerText = "Erreur réseau";
-      }
-
-      requestAnimationFrame(sendFrame);
-    }
-
-    sendFrame();
-  }
-
-  // Lancer le flux vidéo
-  startVideo();
 });
