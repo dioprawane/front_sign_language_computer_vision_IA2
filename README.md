@@ -62,11 +62,29 @@ http://127.0.0.1:5500/front_sign_language_computer_vision_IA2/public/index.html
 ## 🛠 Intégration avec le Backend
 
 Pour connecter le frontend au backend :
-Mettez à jour la variable **`backendUrl`** dans `public/index.html` avec l'URL du backend :
+1. Mettez à jour la variable **`backendUrl`** dans `public/index.html` avec l'URL du backend :
    ```javascript
    const backendUrl = 'http://127.0.0.1:5000';
    ```
-
+2. Lancer le **`serveur`** `Python Flask` avec ces étapes :
+   1. Clonez le dépôt du backend :
+   ```bash
+   git clone https://github.com/dioprawane/sign_language_computer_vision_IA2.git
+   cd sign_language_computer_vision_IA2
+   ```
+    2. Créez un environnement virtuel :
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # Sous Windows : venv\Scripts\activate
+    ```
+    3. Installez les dépendances :
+    ```bash
+    pip install -r requirements.txt
+    ```
+    4. Lancez le script **app.py** :
+    ```bash
+    python app.py
+    ```
 ---
 
 ## 🖥 Raccourcis Clavier
