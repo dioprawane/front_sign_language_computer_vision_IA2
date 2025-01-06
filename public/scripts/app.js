@@ -28,7 +28,7 @@ async function startVideo() {
       })
       .catch(err => console.error('Erreur lors de l’envoi du flux WebRTC:', err));
 
-    }, 3000);
+    }, 1000);
 
   } catch (err) {
     console.error('Erreur lors de l’accès à la caméra :', err);
@@ -47,7 +47,7 @@ function updateStatus() {
     })
     .catch(error => console.error('Erreur lors de la mise à jour des données:', error));
 }
-setInterval(updateStatus, 3000);
+setInterval(updateStatus, 1000);
 
 // Fonctions pour les boutons
 function togglePause() {
