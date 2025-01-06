@@ -20,7 +20,6 @@ Voici l'application **frontend** pour le système de **reconnaissance de la lang
 - **Frontend déployé** : [Lien vers le front déployé sur Render](https://front-sign-language-computer-vision-ia2.onrender.com/)
 - **Backend** : [Lien vers le repo Git du backend](https://github.com/dioprawane/sign_language_computer_vision_IA2)
 
-
 ---
 
 ## 📂 Structure du Projet
@@ -85,6 +84,32 @@ Mettez à jour la variable **`backendUrl`** dans `public/index.html` avec l'URL 
 - **Section Gauche** : Flux vidéo en temps réel (WebRTC) pour capturer les gestes.
 - **Section Droite** : Affiche les caractères détectés, le mot en cours, et la phrase complète.
 - **Boutons** : Options de contrôle pour mettre en pause, réinitialiser, arrêter, et d'autres actions.
+
+---
+
+## 🎥 WebRTC
+
+**WebRTC (Web Real-Time Communication)** est une technologie (une API standardisée) permettant des communications en temps réel directement entre navigateurs ou applications, sans nécessiter de serveurs intermédiaires pour la transmission des données multimédia (audio, vidéo ou données).
+
+### APIs Principales de WebRTC
+WebRTC repose sur trois API principales :
+- **MediaStream** :  
+  Permet de capturer des flux audio et vidéo d'une caméra, d'un micro ou d'autres périphériques multimédia.
+  
+- **RTCPeerConnection** :  
+  Gère la connexion P2P, l'échange des données audio, vidéo et autres messages en temps réel.
+  
+- **RTCDataChannel** :  
+  Facilite le transfert de données non multimédia, comme le texte ou les fichiers, entre les pairs.
+
+### Avantages de WebRTC
+- **Latence Faible** : Communication directe entre pairs.
+- **Open Source** : Fournit une solution gratuite et extensible.
+- **Interopérabilité** : Fonctionne de manière transparente entre différents navigateurs et plateformes.
+
+Pour pallier le fait que le flux vidéo OpenCV ne fonctionne pas quand on déploie l'application en ligne sur un serveur, j'ai utilisé à la place **WebRTC** déployable.
+
+Pour plus d'informations, voir ce [lien](https://webrtc.org/?hl=fr)
 
 ---
 
